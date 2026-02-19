@@ -1,4 +1,4 @@
-name: Atualizar matches diário
+name: Atualizar matches diario
 
 on:
   schedule:
@@ -13,52 +13,47 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout do repositório
+      - name: Checkout repositorio
         uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - name: Instalar jq
         run: sudo apt-get update && sudo apt-get install -y jq
 
-      - name: Buscar próximos eventos da liga (TheSportsDB)
-        env:
-          APIKEY: 1
-          LEAGUE_ID: 4328
+      - name: Buscar dados TheSportsDB
         run: |
           set -e
-          echo "Buscando dados TheSportsDB..."
-          curl -s "https://www.thesportsdb.com/api/v1/json/${APIKEY}/eventsnextleague.php?id=${LEAGUE_ID}" -o raw_events.json
 
-          if [ "$(jq -r '.events // empty | length' raw_events.json)" = "" ]; then
-            echo "Nenhum evento retornado."
-            cat raw_events.json
-            exit 1
-          fi
+          APIKEY=1
+          LEAGUE_ID=4328
+
+          echo "Buscando eventos..."
+          curl -s "https://www.thesportsdb.com/api/v1/json/${APIKEY}/eventsnextleague.php?id=${LEAGUE_ID}" -o raw_events.json
 
           mkdir -p assets/data
 
-          cat raw_events.json | jq -r '
-            .events // [] |
-            map({
+          COUNT=$(jq '.events | length' raw_events.json 2>/dev/null || echo 0)
+
+          if [ "$COUNT" -eq 0 ]; then
+            echo "[]" > assets/data/matches.json
+          else
+            jq '.events | map({
               id: .idEvent,
               homeTeam: .strHomeTeam,
               awayTeam: .strAwayTeam,
-              homeScore: (if (.intHomeScore == null) then null else (.intHomeScore | tonumber) end),
-              awayScore: (if (.intAwayScore == null) then null else (.intAwayScore | tonumber) end),
-              status: ( .strStatus // (.strTime // "Agendado") ),
-              date: ( (.dateEvent // "") + "T" + ( (.strTime // "00:00:00") ) ),
+              homeScore: (.intHomeScore | tonumber?),
+              awayScore: (.intAwayScore | tonumber?),
+              status: (.strStatus // "Agendado"),
+              date: ((.dateEvent // "") + "T" + (.strTime // "00:00:00")),
               stadium: (.strVenue // ""),
               referee: (.strReferee // ""),
               events: []
-            })' > assets/data/matches.json
+            })' raw_events.json > assets/data/matches.json
+          fi
 
-          echo "Arquivo gerado com $(jq '. | length' assets/data/matches.json) partidas."
-
-      - name: Commitar e push das mudanças (se houver)
+      - name: Commit e push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add assets/data/matches.json
-          git commit -m "Atualiza matches.json via TheSportsDB - $(date -u +'%Y-%m-%d')" || echo "Sem mudanças"
+          git commit -m "Atualiza matches" || echo "Sem mudancas"
           git push
