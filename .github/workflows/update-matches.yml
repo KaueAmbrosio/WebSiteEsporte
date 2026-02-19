@@ -22,7 +22,7 @@ jobs:
 
       - name: Buscar próximos eventos da liga (TheSportsDB)
         env:
-          APIKEY: ${{ secrets.THESPORTSDB_KEY }} # coloque o secret no repo (ou use '1' para dev)
+          APIKEY: 1 # # coloque o secret no repo (ou use '1' para dev)
           LEAGUE_ID: 4328 # troque para o ID da liga desejada
         run: |
           set -e
