@@ -1,14 +1,12 @@
-# .github/workflows/update-matches.yml
 name: Atualizar matches diário
 
-# roda diariamente e também manualmente
 on:
   schedule:
-    - cron: "0 3 * * *" # 03:00 UTC todo dia (ajuste se quiser)
-  workflow_dispatch: {}
+    - cron: "0 3 * * *"
+  workflow_dispatch:
 
 permissions:
-  contents: write # permite o workflow commitar mudanças no repo
+  contents: write
 
 jobs:
   update-matches:
@@ -20,24 +18,26 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Instalar jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
       - name: Buscar próximos eventos da liga (TheSportsDB)
         env:
-          APIKEY: 1 # # coloque o secret no repo (ou use '1' para dev)
-          LEAGUE_ID: 4328 # troque para o ID da liga desejada
+          APIKEY: 1
+          LEAGUE_ID: 4328
         run: |
           set -e
-          echo "Buscando dados TheSportsDB para a liga $LEAGUE_ID..."
+          echo "Buscando dados TheSportsDB..."
           curl -s "https://www.thesportsdb.com/api/v1/json/${APIKEY}/eventsnextleague.php?id=${LEAGUE_ID}" -o raw_events.json
-          # valida se veio algo
+
           if [ "$(jq -r '.events // empty | length' raw_events.json)" = "" ]; then
-            echo "Nenhum evento retornado. Conteúdo bruto:"
+            echo "Nenhum evento retornado."
             cat raw_events.json
             exit 1
           fi
 
-          # Transforma raw_events.json para o formato do frontend
-          # Saída: assets/data/matches.json
           mkdir -p assets/data
+
           cat raw_events.json | jq -r '
             .events // [] |
             map({
@@ -53,12 +53,12 @@ jobs:
               events: []
             })' > assets/data/matches.json
 
-          echo "Arquivo assets/data/matches.json gerado com $(jq '. | length' assets/data/matches.json) partidas."
+          echo "Arquivo gerado com $(jq '. | length' assets/data/matches.json) partidas."
 
       - name: Commitar e push das mudanças (se houver)
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add assets/data/matches.json
-          git commit -m "Atualiza matches.json via TheSportsDB - $(date -u +'%Y-%m-%d')" || echo "Sem mudanças para commitar"
+          git commit -m "Atualiza matches.json via TheSportsDB - $(date -u +'%Y-%m-%d')" || echo "Sem mudanças"
           git push
