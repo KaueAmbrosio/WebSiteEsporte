@@ -1,0 +1,364 @@
+:root {
+    --bg: #0f1724;
+    --card: #0b1220;
+    --muted: #9aa4b2;
+    --accent: #ffb703;
+    /* amarelo esportivo */
+    --accent-2: #00b4d8;
+    /* azul */
+    --text: #e6eef7;
+    --glass: rgba(255, 255, 255, 0.03);
+
+    --radius: 12px;
+    --container: 1100px;
+    --gap: 1rem;
+}
+
+* {
+    box-sizing: border-box
+}
+
+html,
+body {
+    height: 100%
+}
+
+body {
+    margin: 0;
+    font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+    background: linear-gradient(180deg, var(--bg) 0%, #071022 100%);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    line-height: 1.4;
+    padding-bottom: 4rem;
+}
+
+/* Container */
+.container {
+    max-width: var(--container);
+    margin: 0 auto;
+    padding: 1rem;
+}
+
+/* Head */
+.site-header {
+    background: linear-gradient(90deg, rgba(255, 255, 255, 0.02), rgba(255, 255, 255, 0.01));
+    border-bottom: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.header-inner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 0.75rem 0;
+}
+
+.brand {
+    color: var(--text);
+    text-decoration: none;
+    font-weight: 700;
+    letter-spacing: 0.4px;
+    font-size: 1.05rem;
+}
+
+/* Nav */
+.main-nav a {
+    color: var(--muted);
+    text-decoration: none;
+    margin-left: 0.75rem;
+    font-size: 0.95rem;
+}
+
+.main-nav a:hover {
+    color: var(--text)
+}
+
+.btn-outline {
+    padding: 6px 10px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    border-radius: 8px;
+    font-size: 0.9rem;
+}
+
+/* Hero */
+.hero {
+    padding: 1rem 0 0.5rem
+}
+
+.hero h1 {
+    margin: 0;
+    font-size: 1.6rem
+}
+
+.lead {
+    color: var(--muted);
+    margin-top: 0.5rem;
+}
+
+/* Cards & Grid */
+.card,
+.card-grid,
+.card-sub {
+    background: linear-gradient(180deg, rgba(255, 255, 255, 0.01), rgba(255, 255, 255, 0.005));
+    border-radius: var(--radius);
+    padding: 0.85rem;
+    box-shadow: 0 6px 18px rgba(2, 6, 23, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.03);
+}
+
+.card-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+/* Match snapshot */
+.match-snapshot {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.5rem;
+}
+
+.team {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex: 1
+}
+
+.team-name {
+    font-weight: 600
+}
+
+.team-score {
+    font-size: 1.8rem;
+    font-weight: 800;
+    margin-top: 0.3rem;
+    color: var(--accent);
+}
+
+/* Buttons & links */
+.btn {
+    display: inline-block;
+    background: var(--accent);
+    color: #04111a;
+    text-decoration: none;
+    padding: 0.45rem 0.8rem;
+    border-radius: 10px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+}
+
+.btn:hover {
+    opacity: 0.95
+}
+
+.btn-ghost {
+    background: transparent;
+    border: 1px solid rgba(255, 255, 255, 0.04);
+    color: var(--muted);
+}
+
+.btn-link {
+    display: inline-block;
+    margin-top: 0.6rem;
+    color: var(--accent);
+    text-decoration: none
+}
+
+.link {
+    color: var(--accent);
+    text-decoration: none
+}
+
+/* Tables & lists */
+.standings {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem
+}
+
+.standings th,
+.standings td {
+    padding: 8px 6px;
+    text-align: left;
+    font-size: 0.95rem
+}
+
+.standings thead th {
+    color: var(--muted);
+    font-weight: 600;
+    font-size: 0.85rem
+}
+
+.match-list {
+    list-style: none;
+    padding: 0;
+    margin: 0
+}
+
+.match-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0.6rem 0;
+    border-bottom: 1px dashed rgba(255, 255, 255, 0.02);
+}
+
+.match-left {
+    width: 85px;
+    color: var(--muted);
+    font-size: 0.9rem
+}
+
+.match-center {
+    flex: 1;
+    text-align: center;
+    font-weight: 600
+}
+
+.match-right {
+    width: 120px;
+    text-align: right
+}
+
+/* Teams grid */
+.team-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.team-card {
+    padding: 0.8rem;
+    background: var(--glass);
+    border-radius: 10px;
+    text-align: center;
+}
+
+.team-logo {
+    width: 56px;
+    height: 56px;
+    border-radius: 8px;
+    object-fit: cover;
+    display: block;
+    margin: 0 auto 0.6rem
+}
+
+/* Match detail */
+.match-detail .match-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    margin-bottom: 0.8rem;
+}
+
+.team-block {
+    text-align: center;
+    flex: 1
+}
+
+.score-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.3rem
+}
+
+.score {
+    font-weight: 900;
+    font-size: 2rem;
+    color: var(--accent)
+}
+
+.match-status {
+    color: var(--muted);
+    font-size: 0.95rem
+}
+
+/* Events */
+.events ul {
+    list-style: none;
+    padding-left: 0;
+    margin: 0
+}
+
+.events li {
+    padding: 0.45rem 0;
+    border-bottom: 1px dotted rgba(255, 255, 255, 0.02)
+}
+
+/* Admin form */
+.admin-panel label {
+    display: block;
+    margin-top: 0.6rem;
+    margin-bottom: 0.25rem;
+    color: var(--muted)
+}
+
+.input {
+    width: 100%;
+    padding: 0.6rem;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.03);
+    background: transparent;
+    color: var(--text);
+}
+
+.score-inputs {
+    display: flex;
+    gap: 0.6rem
+}
+
+.score-inputs>div {
+    flex: 1
+}
+
+/* Footer */
+.site-footer {
+    margin-top: 2rem;
+    padding: 1rem 0;
+    color: var(--muted);
+    text-align: center
+}
+
+/* Utility */
+.muted {
+    color: var(--muted);
+    font-size: 0.9rem
+}
+
+/* -------------------------
+   Larger screens
+   ------------------------- */
+@media(min-width:720px) {
+    .card-grid {
+        grid-template-columns: 1fr 1fr;
+        align-items: start
+    }
+
+    .team-grid {
+        grid-template-columns: repeat(2, 1fr)
+    }
+
+    .match-snapshot {
+        align-items: center
+    }
+}
+
+@media(min-width:1000px) {
+    .card-grid {
+        grid-template-columns: 1fr 1fr 1fr
+    }
+
+    .team-grid {
+        grid-template-columns: repeat(3, 1fr)
+    }
+}

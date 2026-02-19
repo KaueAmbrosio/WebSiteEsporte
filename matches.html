@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Partidas — PlacarAoVivo</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a class="brand" href="index.html">PlacarAoVivo</a>
+            <nav class="main-nav" aria-label="Menu principal">
+                <a href="index.html">Home</a>
+                <a href="matches.html">Partidas</a>
+                <a href="teams.html">Times</a>
+                <a href="admin.html" class="btn-outline">Admin</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="search-bar">
+            <input id="filter" class="input" type="search" placeholder="Filtrar por time, data..."
+                aria-label="Filtrar partidas" />
+        </section>
+
+        <section class="matches-list card">
+            <h1 class="card-title">Partidas</h1>
+
+            <!-- Example grouped by date; JS will populate from assets/data/matches.json -->
+            <div class="match-day">
+                <h3 class="match-day-title">20 de fevereiro de 2026</h3>
+                <ul class="match-list">
+                    <li class="match-item">
+                        <div class="match-left">19:00</div>
+                        <div class="match-center">
+                            <span class="team-name">Time A</span>
+                            <span class="vs">x</span>
+                            <span class="team-name">Time B</span>
+                        </div>
+                        <div class="match-right">
+                            <span class="status">Ao vivo</span>
+                            <a class="link" href="match.html?id=m2026-001">Ver</a>
+                        </div>
+                    </li>
+                    <li class="match-item">
+                        <div class="match-left">21:30</div>
+                        <div class="match-center">
+                            <span class="team-name">Time C</span>
+                            <span class="vs">x</span>
+                            <span class="team-name">Time D</span>
+                        </div>
+                        <div class="match-right">
+                            <span class="status">Agendado</span>
+                            <a class="link" href="match.html?id=m2026-002">Ver</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="pagination">
+                <button class="btn btn-ghost" disabled>«</button>
+                <button class="btn">1</button>
+                <button class="btn">2</button>
+                <button class="btn">»</button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <small>© 2026 PlacarAoVivo</small>
+        </div>
+    </footer>
+
+    <script src="assets/js/app.js" defer></script>
+</body>
+
+</html>

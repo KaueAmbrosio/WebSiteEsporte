@@ -1,0 +1,119 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1" />
+    <title>Placar ao Vivo — Home</title>
+    <link rel="stylesheet" href="assets/css/style.css" />
+</head>
+
+<body>
+    <header class="site-header">
+        <div class="container header-inner">
+            <a class="brand" href="index.html">PlacarAoVivo</a>
+            <nav class="main-nav" aria-label="Menu principal">
+                <a href="index.html">Home</a>
+                <a href="matches.html">Partidas</a>
+                <a href="teams.html">Times</a>
+                <a href="admin.html" class="btn-outline">Admin</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="container">
+        <section class="hero">
+            <h1>Placar ao Vivo</h1>
+            <p class="lead">
+                Acompanhe partidas, tabelas e destaques — atualizado em tempo real (ou
+                manualmente).
+            </p>
+        </section>
+
+        <section class="card-grid">
+            <!-- Live match preview (JS will replace contents) -->
+            <article class="card card-live" id="live-match">
+                <h2 class="card-title">Jogo ao vivo</h2>
+                <div class="match-snapshot">
+                    <div class="team">
+                        <div class="team-name">Time A</div>
+                        <div class="team-score">2</div>
+                    </div>
+                    <div class="match-meta">
+                        <div class="status">2º Tempo • 68'</div>
+                        <a class="btn" href="match.html?id=m2026-001">Ver detalhes</a>
+                    </div>
+                    <div class="team">
+                        <div class="team-name">Time B</div>
+                        <div class="team-score">1</div>
+                    </div>
+                </div>
+            </article>
+
+            <!-- Upcoming matches -->
+            <article class="card" id="upcoming">
+                <h2 class="card-title">Próximas partidas</h2>
+                <ul class="match-list">
+                    <li class="match-item">
+                        <div class="match-left">20/02 • 19:00</div>
+                        <div class="match-center">
+                            Time C <span class="vs">x</span> Time D
+                        </div>
+                        <a class="link" href="match.html?id=m2026-002">Ver</a>
+                    </li>
+                    <li class="match-item">
+                        <div class="match-left">21/02 • 16:00</div>
+                        <div class="match-center">
+                            Time E <span class="vs">x</span> Time F
+                        </div>
+                        <a class="link" href="match.html?id=m2026-003">Ver</a>
+                    </li>
+                </ul>
+                <a class="btn-link" href="matches.html">Ver todas as partidas</a>
+            </article>
+
+            <!-- Table preview -->
+            <article class="card" id="table-preview">
+                <h2 class="card-title">Tabela da competição</h2>
+                <table class="standings">
+                    <thead>
+                        <tr>
+                            <th>Pos</th>
+                            <th>Time</th>
+                            <th>P</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>1</td>
+                            <td>Time A</td>
+                            <td>36</td>
+                        </tr>
+                        <tr>
+                            <td>2</td>
+                            <td>Time C</td>
+                            <td>33</td>
+                        </tr>
+                        <tr>
+                            <td>3</td>
+                            <td>Time B</td>
+                            <td>30</td>
+                        </tr>
+                    </tbody>
+                </table>
+                <a class="btn-link" href="teams.html">Ver times</a>
+            </article>
+        </section>
+    </main>
+
+    <footer class="site-footer">
+        <div class="container">
+            <small>© 2026 PlacarAoVivo — projeto de exemplo</small>
+        </div>
+    </footer>
+
+    <!-- script placeholder -->
+    <script src="assets/js/app.js" defer></script>
+</body>
+
+</html>

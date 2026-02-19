@@ -1,0 +1,41 @@
+[
+    {
+        "id": "m2026-001",
+        "homeTeam": "Time A",
+        "awayTeam": "Time B",
+        "homeScore": 2,
+        "awayScore": 1,
+        "status": "2º tempo • 68'",
+        "date": "2026-02-20T19:00:00",
+        "stadium": "Estádio Exemplo",
+        "referee": "Fulano",
+        "events": [
+            "12' — Gol de João (Time A)",
+            "34' — Cartão amarelo para Carlos (Time B)"
+        ]
+    },
+    {
+        "id": "m2026-002",
+        "homeTeam": "Time C",
+        "awayTeam": "Time D",
+        "homeScore": null,
+        "awayScore": null,
+        "status": "Agendado",
+        "date": "2026-02-21T21:30:00",
+        "stadium": "Estádio B",
+        "referee": "Beltrano",
+        "events": []
+    },
+    {
+        "id": "m2026-003",
+        "homeTeam": "Time E",
+        "awayTeam": "Time F",
+        "homeScore": 0,
+        "awayScore": 0,
+        "status": "Agendado",
+        "date": "2026-02-22T16:00:00",
+        "stadium": "Estádio C",
+        "referee": "Ciclano",
+        "events": []
+    }
+]
