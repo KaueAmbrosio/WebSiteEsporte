@@ -2,6 +2,8 @@
 import express from 'express';
 import fetch from 'node-fetch';
 
+
+
 const app = express();
 const PORT = process.env.PORT || 3000;
 const API_URL = 'https://api-externa-de-futebol/endpoint'; // substitua
