@@ -27,7 +27,8 @@ jobs:
           LEAGUE_ID=4328
 
           echo "Buscando eventos..."
-          curl -s "https://www.thesportsdb.com/api/v1/json/${APIKEY}/eventsnextleague.php?id=${LEAGUE_ID}" -o raw_events.json
+          curl -s "https://www.thesportsdb.com/api/v1/json/${APIKEY}/eventspastleague.php?id=${LEAGUE_ID}" -o raw_events.json
+
 
           mkdir -p assets/data
 
