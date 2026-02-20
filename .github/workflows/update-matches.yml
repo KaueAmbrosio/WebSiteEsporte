@@ -22,7 +22,7 @@ jobs:
           LEAGUE_ID=4328
           mkdir -p assets/data
 
-          URL="https://www.thesportsdb.com/api/v1/json/${APIKEY}/eventsnextleague.php?id=${LEAGUE_ID}"
+          URL="https://www.thesportsdb.com/api/v1/json/${APIKEY}/eventsseason.php?id=${LEAGUE_ID}"
           echo "Consultando $URL"
 
           if curl -f -s "$URL" -o raw.json; then

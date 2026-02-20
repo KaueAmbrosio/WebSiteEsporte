@@ -1,6 +1,6 @@
 // assets/js/app.js
 // fetch-thesportsdb-frontend.js  (colar no app.js temporariamente)
-const APIKEY = '1'; // chave de DEV (não segura para produção)
+const APIKEY = '123'; // chave de DEV (não segura para produção)
 const LEAGUE_ID = 4328; // exemplo: English Premier League
 
 async function fetchNextLeague() {
@@ -233,17 +233,148 @@ document.addEventListener('DOMContentLoaded', () => {
 
     }
 
+    // ADMIN
+    /* ===== TEAM BADGES + COUNTDOWN ===== */
+
+    const THESPORTSDB_KEY = '123';
+
+    async function getTeamBadge(teamName) {
+        if (!teamName) return null;
+
+        const cacheKey = 'team_badges_cache';
+        let cache = {};
+        try { cache = JSON.parse(localStorage.getItem(cacheKey) || '{}'); } catch { }
+
+        if (cache[teamName]) return cache[teamName];
+
+        const url = `https://www.thesportsdb.com/api/v1/json/${THESPORTSDB_KEY}/searchteams.php?t=${encodeURIComponent(teamName)}`;
+
+        try {
+            const res = await fetch(url);
+            const json = await res.json();
+            const badge = json?.teams?.[0]?.strTeamBadge || null;
+            cache[teamName] = badge;
+            localStorage.setItem(cacheKey, JSON.stringify(cache));
+            return badge;
+        } catch {
+            cache[teamName] = null;
+            localStorage.setItem(cacheKey, JSON.stringify(cache));
+            return null;
+        }
+    }
+
+    function startCountdown(el, isoDate) {
+        function update() {
+            const now = new Date();
+            const target = new Date(isoDate);
+            let diff = Math.floor((target - now) / 1000);
+
+            if (diff <= 0) {
+                el.textContent = 'Ao vivo';
+                clearInterval(timer);
+                return;
+            }
+
+            const h = String(Math.floor(diff / 3600)).padStart(2, '0');
+            const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
+            const s = String(diff % 60).padStart(2, '0');
+
+            el.textContent = `${h}:${m}:${s}`;
+        }
+
+        update();
+        const timer = setInterval(update, 1000);
+    }
+
+    async function renderMatchesWithBadges(matches) {
+        const container = document.querySelector('.matches-list');
+        if (!container) return;
+
+        const existing = container.querySelector('.match-day');
+        if (existing) existing.remove();
+
+        const groups = {};
+        matches.forEach(m => {
+            const day = new Date(m.date).toLocaleDateString('pt-BR');
+            if (!groups[day]) groups[day] = [];
+            groups[day].push(m);
+        });
+
+        for (const day of Object.keys(groups)) {
+            const dayDiv = document.createElement('div');
+            dayDiv.className = 'match-day';
+
+            const h = document.createElement('h3');
+            h.className = 'match-day-title';
+            h.textContent = day;
+            dayDiv.appendChild(h);
+
+            const ul = document.createElement('ul');
+            ul.className = 'match-list';
+
+            for (const m of groups[day]) {
+                const li = document.createElement('li');
+                li.className = 'match-item';
+
+                const homeBadge = document.createElement('img');
+                homeBadge.className = 'team-badge';
+                homeBadge.src = 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Football_%28soccer_ball%29.svg';
+;
+
+                const awayBadge = document.createElement('img');
+                awayBadge.className = 'team-badge';
+                awayBadge.src = 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Football_%28soccer_ball%29.svg';
+
+                const countdown = document.createElement('div');
+                countdown.className = 'countdown';
+
+                startCountdown(countdown, m.date);
+
+                li.innerHTML = `
+                <div class="match-left">
+                    ${new Date(m.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                </div>
+                <div class="match-center">
+                    <span class="team">${m.homeTeam}</span>
+                    <span class="vs">x</span>
+                    <span class="team">${m.awayTeam}</span>
+                </div>
+                <div class="match-right">
+                    <span class="status">${m.status || 'Agendado'}</span>
+                    <a class="link" href="match.html?id=${m.id}">Ver</a>
+                </div>
+            `;
+
+                // inserir badges antes dos nomes
+                const center = li.querySelector('.match-center');
+                center.prepend(homeBadge);
+                center.appendChild(awayBadge);
+
+                li.appendChild(countdown);
+                ul.appendChild(li);
+
+                // carregar badges async
+                getTeamBadge(m.homeTeam).then(b => { if (b) homeBadge.src = b; });
+                getTeamBadge(m.awayTeam).then(b => { if (b) awayBadge.src = b; });
+            }
+
+            dayDiv.appendChild(ul);
+            container.appendChild(dayDiv);
+        }
+    }
     // BOOT
     (async () => {
         try {
             const matches = await loadMatches();
-            // pages detection
+
             if (document.querySelector('.matches-list')) {
-                renderMatchList(matches);
+                renderMatchesWithBadges(matches);
             }
+
             if (document.getElementById('live-match') || document.getElementById('upcoming')) {
                 renderIndex(matches);
             }
+
             if (document.getElementById('events-list')) {
                 const id = getQueryId();
                 if (!id) {
@@ -257,16 +388,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
             }
-            // admin
+
             if (document.getElementById('match-select')) {
                 setupAdmin(matches);
             }
+
         } catch (err) {
             console.error(err);
-            // show a simple error in pages
             const main = document.querySelector('main');
             if (main) main.innerHTML = `<div style="color:salmon;padding:1rem;border-radius:8px">Erro ao carregar dados: ${err.message}</div>`;
         }
-    })();
-
-});
+    })(); });

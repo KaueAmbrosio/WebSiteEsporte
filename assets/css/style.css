@@ -362,3 +362,53 @@ body {
         grid-template-columns: repeat(3, 1fr)
     }
 }
+
+/* team badges & countdown */
+.match-card {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 0.75rem;
+    border-radius: 10px;
+    background: var(--glass);
+}
+
+.team-block {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    min-width: 160px;
+}
+
+.team-badge {
+    width: 48px;
+    height: 48px;
+    object-fit: contain;
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 6px;
+}
+
+.match-meta-compact {
+    text-align: center;
+    flex: 1;
+}
+
+.match-time {
+    color: var(--muted);
+    font-size: 0.95rem;
+}
+
+.countdown {
+    font-weight: 700;
+    color: var(--accent-2);
+    font-size: 0.95rem;
+    margin-top: 4px;
+}
+
+@media(min-width:720px) {
+    .team-badge {
+        width: 56px;
+        height: 56px
+    }
+}
