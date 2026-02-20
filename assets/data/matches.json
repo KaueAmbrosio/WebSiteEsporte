@@ -1,1 +1,14 @@
-[]
+[
+  {
+    "id": "2267333",
+    "homeTeam": "Aston Villa",
+    "awayTeam": "Leeds United",
+    "homeScore": null,
+    "awayScore": null,
+    "status": "Not Started",
+    "date": "2026-02-21T15:00:00",
+    "stadium": "Villa Park",
+    "referee": "",
+    "events": []
+  }
+]
