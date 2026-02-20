@@ -2,6 +2,8 @@ name: Atualizar matches diario
 
 on:
   workflow_dispatch:
+  schedule:
+    - cron: "0 3 * * *"
 
 permissions:
   contents: write
@@ -14,9 +16,6 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Instalar jq
-        run: sudo apt-get update && sudo apt-get install -y jq
-
       - name: Buscar dados TheSportsDB
         run: |
           set -e
@@ -24,35 +23,35 @@ jobs:
           LEAGUE_ID=4328
           mkdir -p assets/data
 
-          echo "Tentando v1 next..."
-          if curl -f -s "https://www.thesportsdb.com/api/v1/json/${APIKEY}/eventsnextleague.php?id=${LEAGUE_ID}" -o raw.json; then
+          echo "Tentando v2 last..."
+          if curl -f -s "https://www.thesportsdb.com/api/v2/json/${APIKEY}/events/last/${LEAGUE_ID}" -o raw.json; then
             if jq -e '.events != null' raw.json >/dev/null; then
               echo "Dados encontrados"
               jq '.events | map({
                 id: .idEvent,
-                homeTeam: .strHomeTeam,
-                awayTeam: .strAwayTeam,
-                homeScore: .intHomeScore,
-                awayScore: .intAwayScore,
-                status: (.strStatus // "Agendado"),
-                date: ((.dateEvent // "") + "T" + (.strTime // "00:00:00")),
+                homeTeam: (.strHome // .strHomeTeam),
+                awayTeam: (.strAway // .strAwayTeam),
+                homeScore: (.intHomeScore | tonumber?),
+                awayScore: (.intAwayScore | tonumber?),
+                status: (.strStatus // "Finalizado"),
+                date: ((.dateEvent // .date // "") + "T" + (.strTime // .time // "00:00:00")),
                 stadium: (.strVenue // ""),
                 referee: (.strReferee // ""),
                 events: []
               })' raw.json > assets/data/matches.json
             else
-              echo "Sem eventos, criando vazio"
+              echo "Sem eventos"
               echo "[]" > assets/data/matches.json
             fi
           else
-            echo "API falhou, criando vazio"
+            echo "API falhou"
             echo "[]" > assets/data/matches.json
           fi
 
       - name: Commit e push
         run: |
-          git config user.name "github-actions"
+          git config user.name "github-actions[bot]"
           git config user.email "actions@github.com"
           git add assets/data/matches.json
-          git commit -m "update matches" || echo "sem mudancas"
+          git commit -m "Atualiza matches $(date -u +'%Y-%m-%d')" || echo "Sem mudanças"
           git push
