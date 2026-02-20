@@ -1,8 +1,6 @@
 name: Atualizar matches diario
 
 on:
-  schedule:
-    - cron: "0 3 * * *"
   workflow_dispatch:
 
 permissions:
@@ -13,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repositorio
+      - name: Checkout
         uses: actions/checkout@v4
 
       - name: Instalar jq
@@ -22,39 +20,39 @@ jobs:
       - name: Buscar dados TheSportsDB
         run: |
           set -e
-
           APIKEY=1
           LEAGUE_ID=4328
-
-          echo "Buscando eventos..."
-          curl -s "https://www.thesportsdb.com/api/v1/json/${APIKEY}/eventspastleague.php?id=${LEAGUE_ID}" -o raw_events.json
-
-
           mkdir -p assets/data
 
-          COUNT=$(jq '.events | length' raw_events.json 2>/dev/null || echo 0)
-
-          if [ "$COUNT" -eq 0 ]; then
-            echo "[]" > assets/data/matches.json
+          echo "Tentando v1 next..."
+          if curl -f -s "https://www.thesportsdb.com/api/v1/json/${APIKEY}/eventsnextleague.php?id=${LEAGUE_ID}" -o raw.json; then
+            if jq -e '.events != null' raw.json >/dev/null; then
+              echo "Dados encontrados"
+              jq '.events | map({
+                id: .idEvent,
+                homeTeam: .strHomeTeam,
+                awayTeam: .strAwayTeam,
+                homeScore: .intHomeScore,
+                awayScore: .intAwayScore,
+                status: (.strStatus // "Agendado"),
+                date: ((.dateEvent // "") + "T" + (.strTime // "00:00:00")),
+                stadium: (.strVenue // ""),
+                referee: (.strReferee // ""),
+                events: []
+              })' raw.json > assets/data/matches.json
+            else
+              echo "Sem eventos, criando vazio"
+              echo "[]" > assets/data/matches.json
+            fi
           else
-            jq '.events | map({
-              id: .idEvent,
-              homeTeam: .strHomeTeam,
-              awayTeam: .strAwayTeam,
-              homeScore: (.intHomeScore | tonumber?),
-              awayScore: (.intAwayScore | tonumber?),
-              status: (.strStatus // "Agendado"),
-              date: ((.dateEvent // "") + "T" + (.strTime // "00:00:00")),
-              stadium: (.strVenue // ""),
-              referee: (.strReferee // ""),
-              events: []
-            })' raw_events.json > assets/data/matches.json
+            echo "API falhou, criando vazio"
+            echo "[]" > assets/data/matches.json
           fi
 
       - name: Commit e push
         run: |
-          git config user.name "github-actions[bot]"
+          git config user.name "github-actions"
           git config user.email "actions@github.com"
           git add assets/data/matches.json
-          git commit -m "Atualiza matches" || echo "Sem mudancas"
+          git commit -m "update matches" || echo "sem mudancas"
           git push
