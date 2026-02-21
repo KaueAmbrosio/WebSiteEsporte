@@ -1,401 +1,348 @@
-// assets/js/app.js
-// fetch-thesportsdb-frontend.js  (colar no app.js temporariamente)
-const APIKEY = '123'; // chave de DEV (não segura para produção)
-const LEAGUE_ID = 4328; // exemplo: English Premier League
+// assets/js/app.js (versão corrigida e simples)
+// ===============================
+// PlacarAoVivo — app.js (corrigido)
+// ===============================
 
-async function fetchNextLeague() {
-    const url = `https://www.thesportsdb.com/api/v1/json/${APIKEY}/eventsnextleague.php?id=${LEAGUE_ID}`;
-    const res = await fetch(url);
-    const json = await res.json();
-    // payload: { events: [ { idEvent, strHomeTeam, strAwayTeam, dateEvent, strTime, intHomeScore, intAwayScore, ... } ] }
-    return json.events || [];
+const APIKEY = "123";
+const LEAGUE_ID = "4328";
+const SEASON = "2025-2026"; // ajuste se necessário
+
+/* ---------- util: datas ---------- */
+function parseDateSafe(dateStr) {
+    if (!dateStr) return null;
+    const d = new Date(dateStr);
+    return isNaN(d.getTime()) ? null : d;
 }
 
-// exemplo de uso
-fetchNextLeague().then(events => {
-    console.log('Próximos eventos (TheSportsDB):', events);
-    // transforme os eventos para o formato do seu matches.json e use renderMatchList(...)
-});
+/* ---------- util: normalizar nomes / slugs para imagens ---------- */
+function normalizeTeamName(name) {
+    if (!name) return "";
+    // map de exceções (nomes diferentes entre API e arquivo de imagens)
+    const map = {
+        "Brighton & Hove Albion": "brighton",
+        "Tottenham Hotspur": "tottenham",
+        "Wolverhampton Wanderers": "wolves",
+        "Manchester United": "manchester-united",
+        "Manchester City": "manchester-city",
+        "Newcastle United": "newcastle",
+        "Nottingham Forest": "nottingham-forest",
+        "West Ham United": "west-ham",
+        "Sheffield United": "sheffield-united",
+        "Luton Town": "luton",
+        "Aston Villa": "aston-villa",
+        "Leeds United": "leeds-united",
+        "Arsenal": "arsenal",
+        "Chelsea": "chelsea",
+        "Liverpool": "liverpool",
+        "Everton": "everton",
+        "Crystal Palace": "crystal-palace",
+        "Fulham": "fulham",
+        "Burnley": "burnley",
+        "Brentford": "brentford",
+        "Bournemouth": "bournemouth"
+    };
+    if (map[name]) return map[name];
+    return name.toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/&/g, "and")
+        .replace(/[^a-z0-9]+/g, "-")
+        .replace(/^-|-$/g, "");
+}
 
+/* ---------- badge local (usa slug) ---------- */
+function getTeamBadge(teamName) {
+    if (!teamName) return "assets/img/teams/default.png";
+    const slug = normalizeTeamName(teamName);
+    return `assets/img/teams/${slug}.png`;
+}
 
-// Carrega matches.json (fallback) e popula index/matches/match/admin
-document.addEventListener('DOMContentLoaded', () => {
-    const DATA_PATH = 'assets/data/matches.json';
-    const STORAGE_KEY = 'placar_matches_v1';
+/* ---------- carregar próximos eventos (TheSportsDB) ---------- */
+async function loadMatches() {
+    try {
+        const url = `https://www.thesportsdb.com/api/v1/json/${APIKEY}/eventsnextleague.php?id=${LEAGUE_ID}`;
+        const resp = await fetch(url);
+        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+        const data = await resp.json();
+        const arr = data.events || [];
+        return arr.map(m => ({
+            id: m.idEvent,
+            homeTeam: m.strHomeTeam,
+            awayTeam: m.strAwayTeam,
+            homeScore: m.intHomeScore ? Number(m.intHomeScore) : null,
+            awayScore: m.intAwayScore ? Number(m.intAwayScore) : null,
+            status: m.strStatus || "Agendado",
+            date: m.dateEvent && m.strTime ? `${m.dateEvent}T${m.strTime}` : (m.dateEvent || ""),
+            stadium: m.strVenue || "",
+            referee: m.strReferee || ""
+        }));
+    } catch (err) {
+        console.warn("Erro ao carregar matches:", err);
+        return [];
+    }
+}
 
-    // Load data: primeiro localStorage, se não fetch JSON e salva em localStorage
-    async function loadMatches() {
-        const stored = localStorage.getItem(STORAGE_KEY);
-        if (stored) {
-            try {
-                return JSON.parse(stored);
-            } catch (e) {
-                console.warn('Erro ao parsear localStorage, recarregando do JSON.', e);
+/* ---------- tabela: busca raw ---------- */
+async function fetchStandingsRaw() {
+    const url = `https://www.thesportsdb.com/api/v1/json/${APIKEY}/lookuptable.php?l=${LEAGUE_ID}&s=${SEASON}`;
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error(`Standings HTTP ${resp.status}`);
+    const j = await resp.json();
+    return j.table || [];
+}
+
+/* ---------- cache simples para standings ---------- */
+const STANDINGS_CACHE_KEY = 'fcscore_standings_cache_v1';
+const STANDINGS_CACHE_TTL = 1000 * 60 * 5; // 5min
+
+async function getStandingsCached() {
+    try {
+        const raw = localStorage.getItem(STANDINGS_CACHE_KEY);
+        if (raw) {
+            const obj = JSON.parse(raw);
+            if (obj.ts && (Date.now() - obj.ts) < STANDINGS_CACHE_TTL && Array.isArray(obj.data) && obj.data.length) {
+                // retorna cache imediatamente e atualiza em background
+                fetchStandingsRaw().then(data => {
+                    localStorage.setItem(STANDINGS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data }));
+                }).catch(() => {/*ignore*/ });
+                return obj.data;
             }
         }
-        const resp = await fetch(DATA_PATH);
-        if (!resp.ok) throw new Error('Não foi possível carregar matches.json');
-        const data = await resp.json();
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-        return data;
+    } catch (e) { console.warn('cache error', e); }
+    // sem cache válido
+    const data = await fetchStandingsRaw();
+    try { localStorage.setItem(STANDINGS_CACHE_KEY, JSON.stringify({ ts: Date.now(), data })); } catch { }
+    return data;
+}
+
+/* ---------- populate helper (pode limitar linhas para preview) ---------- */
+function populateStandingsTable(tableData = [], tbodyEl, limit = null) {
+    if (!tbodyEl) return;
+    if (!Array.isArray(tableData) || tableData.length === 0) {
+        tbodyEl.innerHTML = '<tr><td colspan="8">Sem dados da tabela.</td></tr>';
+        return;
+    }
+    const rows = (limit ? tableData.slice(0, limit) : tableData);
+    tbodyEl.innerHTML = '';
+    for (const team of rows) {
+        const rank = team.intRank ?? '';
+        const name = team.strTeam ?? '';
+        const pts = team.intPoints ?? '-';
+        const played = team.intPlayed ?? '-';
+        const win = team.intWin ?? '-';
+        const draw = team.intDraw ?? '-';
+        const loss = team.intLoss ?? '-';
+        const gd = team.intGoalDifference ?? '-';
+        const badge = getTeamBadge(name);
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+      <td>${rank}</td>
+      <td class="team-cell">
+        <img class="team-badge" src="${badge}" alt="${name}" onerror="this.src='assets/img/teams/default.png'">
+        ${name}
+      </td>
+      <td>${pts}</td>
+      <td>${played}</td>
+      <td>${win}</td>
+      <td>${draw}</td>
+      <td>${loss}</td>
+      <td>${gd}</td>
+    `;
+        tbodyEl.appendChild(tr);
+    }
+}
+
+/* ---------- render preview (index) - mostra top 5 ---------- */
+async function renderStandingsPreview() {
+    const tbody = document.querySelector("#table-preview tbody");
+    if (!tbody) return;
+    const data = await getStandingsCached();
+    populateStandingsTable(data, tbody, 5); // apenas top5 na preview
+}
+
+/* ---------- render full standings page ---------- */
+async function renderFullStandingsPage() {
+    const tbody = document.getElementById('full-standings');
+    if (!tbody) return;
+    const data = await getStandingsCached();
+    populateStandingsTable(data, tbody, null); // todas as linhas
+}
+
+/* ---------- render teams grid (teams.html) ---------- */
+async function renderTeamsPage() {
+    const grid = document.getElementById("teams-grid");
+    if (!grid) return;
+    const data = await getStandingsCached();
+    if (!Array.isArray(data) || data.length === 0) {
+        grid.innerHTML = "<p>Sem dados da tabela.</p>";
+        return;
+    }
+    grid.innerHTML = data.map(t => `
+    <article class="team-card">
+      <img class="team-logo" src="${getTeamBadge(t.strTeam)}" alt="${t.strTeam}" onerror="this.src='assets/img/teams/default.png'">
+      <h3 class="team-card-title">${t.strTeam}</h3>
+      <p>Posição: ${t.intRank} • Pontos: ${t.intPoints}</p>
+    </article>
+  `).join('');
+}
+
+/* ---------- render index: matches, live, upcoming ---------- */
+function renderIndex(matches = []) {
+    const liveEl = document.getElementById("live-match");
+    const upcomingEl = document.getElementById("upcoming");
+    if (!Array.isArray(matches)) matches = [];
+
+    const now = Date.now();
+
+    // procurar jogo "ao vivo"
+    let live = matches.find(m => m.status && /live|ao vivo|in play|em andamento/i.test(m.status));
+    if (!live) {
+        const future = matches.filter(m => parseDateSafe(m.date) && new Date(m.date).getTime() > now);
+        live = future.sort((a, b) => new Date(a.date) - new Date(b.date))[0] || null;
     }
 
-    function saveMatches(matches) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(matches));
+    if (liveEl) {
+        if (!live) {
+            liveEl.querySelector('.card-title')?.remove();
+            liveEl.innerHTML = `
+        <h2 class="card-title">Partida em destaque</h2>
+        <div class="match-snapshot">
+          <div class="team">
+            <div class="team-name">—</div>
+            <div class="team-score">-</div>
+          </div>
+          <div class="match-meta">
+            <div class="status muted">Nenhum jogo ao vivo</div>
+            <a class="btn" href="matches.html">Ver detalhes</a>
+          </div>
+          <div class="team">
+            <div class="team-name">—</div>
+            <div class="team-score">-</div>
+          </div>
+        </div>`;
+        } else {
+            const hb = getTeamBadge(live.homeTeam);
+            const ab = getTeamBadge(live.awayTeam);
+            liveEl.innerHTML = `
+        <h2 class="card-title">Partida em destaque</h2>
+        <div class="match-snapshot">
+          <div class="team">
+            <img class="team-badge-lg" src="${hb}" alt="${live.homeTeam}" onerror="this.src='assets/img/teams/default.png'">
+            <div class="team-name">${live.homeTeam}</div>
+            <div class="team-score">${live.homeScore ?? "-"}</div>
+          </div>
+          <div class="match-meta">
+            <div class="status">${live.status || "Em breve"}</div>
+            <a class="btn" href="match.html?id=${live.id}">Ver detalhes</a>
+          </div>
+          <div class="team">
+            <img class="team-badge-lg" src="${ab}" alt="${live.awayTeam}" onerror="this.src='assets/img/teams/default.png'">
+            <div class="team-name">${live.awayTeam}</div>
+            <div class="team-score">${live.awayScore ?? "-"}</div>
+          </div>
+        </div>`;
+        }
     }
 
-    // util query id
-    function getQueryId() {
-        return new URLSearchParams(window.location.search).get('id');
-    }
+    if (upcomingEl) {
+        const upcomingList = (matches || []).filter(m => parseDateSafe(m.date) && new Date(m.date).getTime() > now)
+            .sort((a, b) => new Date(a.date) - new Date(b.date)).slice(0, 5);
 
-    // format date
-    function formatDate(iso) {
-        if (!iso) return '';
-        const d = new Date(iso);
-        return d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-    }
-
-    // RENDERERS
-    function renderMatchList(matches, containerSelector = '.matches-list') {
-        const container = document.querySelector(containerSelector);
-        if (!container) return;
-        // remove existing list items (keeps title)
-        const existing = container.querySelector('.match-day');
-        if (existing) existing.remove();
-
-        // Group by date (simple: group by dateString)
-        const groups = {};
-        matches.forEach(m => {
-            const day = new Date(m.date).toLocaleDateString('pt-BR');
-            if (!groups[day]) groups[day] = [];
-            groups[day].push(m);
-        });
-
-        for (const day of Object.keys(groups)) {
-            const dayDiv = document.createElement('div');
-            dayDiv.className = 'match-day';
-            const h = document.createElement('h3');
-            h.className = 'match-day-title';
-            h.textContent = day;
-            dayDiv.appendChild(h);
-
-            const ul = document.createElement('ul');
-            ul.className = 'match-list';
-
-            groups[day].forEach(m => {
-                const li = document.createElement('li');
-                li.className = 'match-item';
+        const ul = upcomingEl.querySelector(".match-list");
+        if (ul) {
+            ul.innerHTML = "";
+            upcomingList.forEach(m => {
+                const d = parseDateSafe(m.date);
+                const hb = getTeamBadge(m.homeTeam);
+                const ab = getTeamBadge(m.awayTeam);
+                const li = document.createElement("li");
+                li.className = "match-item";
                 li.innerHTML = `
-          <div class="match-left">${new Date(m.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
-          <div class="match-center"><span class="team-name">${m.homeTeam}</span> <span class="vs">x</span> <span class="team-name">${m.awayTeam}</span></div>
-          <div class="match-right"><span class="status">${m.status || 'Agendado'}</span> <a class="link" href="match.html?id=${m.id}">Ver</a></div>
+          <div class="match-left">${d ? d.toLocaleDateString("pt-BR") + " • " + d.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' }) : "Sem data"}</div>
+          <div class="match-center">
+            <img class="team-badge" src="${hb}" alt="${m.homeTeam}" onerror="this.src='assets/img/teams/default.png'">
+            ${m.homeTeam} <span class="vs">x</span> ${m.awayTeam}
+            <img class="team-badge" src="${ab}" alt="${m.awayTeam}" onerror="this.src='assets/img/teams/default.png'">
+          </div>
+          <a class="link" href="match.html?id=${m.id}">Ver</a>
         `;
                 ul.appendChild(li);
             });
-
-            dayDiv.appendChild(ul);
-            container.appendChild(dayDiv);
         }
     }
+}
 
-    function renderIndex(matches) {
-        // Live match: pick first with status containing "Ao vivo" or with scores not null
-        const live = matches.find(m => (m.status && m.status.toLowerCase().includes('ao vivo')) || (m.homeScore !== null && m.awayScore !== null && (typeof m.homeScore === 'number' || typeof m.awayScore === 'number')));
-        const liveEl = document.getElementById('live-match');
-        if (liveEl) {
-            const home = live ? live.homeTeam : '—';
-            const away = live ? live.awayTeam : '—';
-            const homeScore = live && (live.homeScore !== null && live.homeScore !== undefined) ? live.homeScore : '-';
-            const awayScore = live && (live.awayScore !== null && live.awayScore !== undefined) ? live.awayScore : '-';
-            const status = live ? (live.status || formatDate(live.date)) : 'Nenhum jogo ao vivo';
-            liveEl.querySelector('.team-name')?.remove(); // simpler: replace inner
-            liveEl.innerHTML = `
-        <h2 class="card-title">Jogo ao vivo</h2>
-        <div class="match-snapshot">
-          <div class="team">
-            <div class="team-name">${home}</div>
-            <div class="team-score">${homeScore}</div>
-          </div>
-          <div class="match-meta">
-            <div class="status">${status}</div>
-            <a class="btn" href="${live ? 'match.html?id=' + live.id : 'matches.html'}">Ver detalhes</a>
-          </div>
-          <div class="team">
-            <div class="team-name">${away}</div>
-            <div class="team-score">${awayScore}</div>
-          </div>
-        </div>
-      `;
+/* ---------- match detail ---------- */
+function renderMatchDetail(match) {
+    const eventsEl = document.getElementById("events-list");
+    if (!eventsEl || !match) return;
+    const d = parseDateSafe(match.date);
+    const dateStr = d ? d.toLocaleDateString("pt-BR") + " • " + d.toLocaleTimeString("pt-BR", { hour: '2-digit', minute: '2-digit' }) : "Sem data";
+    eventsEl.innerHTML = `
+    <li><strong>${match.homeTeam}</strong> x <strong>${match.awayTeam}</strong></li>
+    <li>${dateStr}</li>
+    <li>Estádio: ${match.stadium || "-"}</li>
+    <li>Árbitro: ${match.referee || "-"}</li>
+  `;
+}
+
+/* ---------- BOOT ---------- */
+document.addEventListener("DOMContentLoaded", async () => {
+    try {
+        const matches = await loadMatches();
+
+        // index area
+        if (document.querySelector(".matches-list") || document.getElementById("live-match") || document.getElementById("upcoming")) {
+            renderIndex(matches);
         }
 
-        // upcoming preview: next 2 by date
-        const upcomingEl = document.getElementById('upcoming');
-        if (upcomingEl) {
-            const upcoming = matches
-                .filter(m => !m.status || m.status.toLowerCase().includes('agend'))
-                .sort((a, b) => new Date(a.date) - new Date(b.date))
-                .slice(0, 4);
-            const ul = upcomingEl.querySelector('.match-list');
-            if (ul) {
-                ul.innerHTML = '';
-                upcoming.forEach(m => {
-                    const li = document.createElement('li');
-                    li.className = 'match-item';
-                    li.innerHTML = `
-            <div class="match-left">${new Date(m.date).toLocaleDateString('pt-BR')} • ${new Date(m.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}</div>
-            <div class="match-center">${m.homeTeam} <span class="vs">x</span> ${m.awayTeam}</div>
-            <a class="link" href="match.html?id=${m.id}">Ver</a>
-          `;
-                    ul.appendChild(li);
-                });
-            }
+        // render preview top5
+        if (document.querySelector("#table-preview tbody")) {
+            await renderStandingsPreview();
         }
 
-        // table preview is static in HTML, you can extend later to compute standings
+        // full standings page
+        if (document.getElementById("full-standings")) {
+            await renderFullStandingsPage();
+        }
+
+        // teams page
+        if (document.getElementById("teams-grid")) {
+            await renderTeamsPage();
+        }
+
+        // match detail page
+        if (document.getElementById("events-list")) {
+            const id = new URLSearchParams(location.search).get("id");
+            const match = matches.find(m => m.id === id);
+            if (match) renderMatchDetail(match);
+        }
+    } catch (err) {
+        console.error("BOOT error:", err);
+        const main = document.querySelector("main");
+        if (main) main.innerHTML = `<div style="color:salmon;padding:1rem;border-radius:8px">Erro ao carregar dados: ${err.message}</div>`;
+    }
+});
+
+// ===============================
+// CARROSSEL HERO — FC SCORE
+// ===============================
+document.addEventListener("DOMContentLoaded", () => {
+    const slides = document.querySelectorAll(".player-carousel .carousel-item");
+    if (!slides.length) return;
+
+    let index = 0;
+
+    // garante que apenas a primeira esteja visível ao iniciar
+    slides.forEach((s, i) => {
+        s.classList.toggle("visible", i === 0);
+    });
+
+    function nextSlide() {
+        slides[index].classList.remove("visible");
+        index = (index + 1) % slides.length;
+        slides[index].classList.add("visible");
     }
 
-    function renderMatchDetail(match) {
-        if (!match) return;
-        const homeName = document.getElementById('home-name');
-        const awayName = document.getElementById('away-name');
-        const homeScore = document.getElementById('home-score');
-        const awayScore = document.getElementById('away-score');
-        const matchStatus = document.getElementById('match-status');
-        const eventsList = document.getElementById('events-list');
-        const infoSection = document.querySelector('.match-info');
-
-        if (homeName) homeName.textContent = match.homeTeam || 'Casa';
-        if (awayName) awayName.textContent = match.awayTeam || 'Visitante';
-        if (homeScore) homeScore.textContent = (match.homeScore === null || match.homeScore === undefined) ? '-' : match.homeScore;
-        if (awayScore) awayScore.textContent = (match.awayScore === null || match.awayScore === undefined) ? '-' : match.awayScore;
-        if (matchStatus) matchStatus.textContent = match.status || formatDate(match.date);
-        if (infoSection) infoSection.innerHTML = `<p><strong>Estádio:</strong> ${match.stadium || '-'} • <strong>Data:</strong> ${formatDate(match.date)} • <strong>Árbitro:</strong> ${match.referee || '-'}</p>`;
-
-        if (eventsList) {
-            eventsList.innerHTML = '';
-            if (!match.events || match.events.length === 0) {
-                eventsList.innerHTML = '<li>Sem eventos registrados.</li>';
-            } else {
-                match.events.forEach(ev => {
-                    const li = document.createElement('li');
-                    li.textContent = ev;
-                    eventsList.appendChild(li);
-                });
-            }
-        }
-    }
-
-    // ADMIN: popula select e atualiza jogo
-    function setupAdmin(matches) {
-        const select = document.getElementById('match-select');
-        if (!select) return;
-        select.innerHTML = matches.map(m => `<option value="${m.id}">${m.homeTeam} x ${m.awayTeam} — ${new Date(m.date).toLocaleDateString('pt-BR')}</option>`).join('');
-
-        // When select changes, fill scores/status
-        function fillFromSelect() {
-            const id = select.value;
-            const match = matches.find(x => x.id === id);
-            if (!match) return;
-            document.getElementById('home-score').value = match.homeScore ?? 0;
-            document.getElementById('away-score').value = match.awayScore ?? 0;
-            document.getElementById('status').value = match.status ?? '';
-        }
-
-        select.addEventListener('change', fillFromSelect);
-        fillFromSelect();
-
-        document.getElementById('btn-update')?.addEventListener('click', () => {
-            const id = select.value;
-            const match = matches.find(x => x.id === id);
-            if (!match) return alert('Partida não encontrada');
-            match.homeScore = Number(document.getElementById('home-score').value);
-            match.awayScore = Number(document.getElementById('away-score').value);
-            match.status = document.getElementById('status').value;
-            saveMatches(matches);
-            alert('Placar atualizado localmente. Recarregue a página de detalhes para ver as mudanças.');
-            // optional: refresh pages or redirect to match detail
-            // window.location.href = `match.html?id=${id}`;
-        });
-
-        document.getElementById('btn-add-event')?.addEventListener('click', () => {
-            const id = select.value;
-            const match = matches.find(x => x.id === id);
-            if (!match) return alert('Partida não encontrada');
-            const ev = document.getElementById('event').value;
-            if (!ev) return alert('Digite um evento');
-            match.events = match.events || [];
-            match.events.push(ev);
-            saveMatches(matches);
-            document.getElementById('event').value = '';
-            alert('Evento adicionado localmente.');
-        });
-
-    }
-
-    // ADMIN
-    /* ===== TEAM BADGES + COUNTDOWN ===== */
-
-    const THESPORTSDB_KEY = '123';
-
-    async function getTeamBadge(teamName) {
-        if (!teamName) return null;
-
-        const cacheKey = 'team_badges_cache';
-        let cache = {};
-        try { cache = JSON.parse(localStorage.getItem(cacheKey) || '{}'); } catch { }
-
-        if (cache[teamName]) return cache[teamName];
-
-        const url = `https://www.thesportsdb.com/api/v1/json/${THESPORTSDB_KEY}/searchteams.php?t=${encodeURIComponent(teamName)}`;
-
-        try {
-            const res = await fetch(url);
-            const json = await res.json();
-            const badge = json?.teams?.[0]?.strTeamBadge || null;
-            cache[teamName] = badge;
-            localStorage.setItem(cacheKey, JSON.stringify(cache));
-            return badge;
-        } catch {
-            cache[teamName] = null;
-            localStorage.setItem(cacheKey, JSON.stringify(cache));
-            return null;
-        }
-    }
-
-    function startCountdown(el, isoDate) {
-        function update() {
-            const now = new Date();
-            const target = new Date(isoDate);
-            let diff = Math.floor((target - now) / 1000);
-
-            if (diff <= 0) {
-                el.textContent = 'Ao vivo';
-                clearInterval(timer);
-                return;
-            }
-
-            const h = String(Math.floor(diff / 3600)).padStart(2, '0');
-            const m = String(Math.floor((diff % 3600) / 60)).padStart(2, '0');
-            const s = String(diff % 60).padStart(2, '0');
-
-            el.textContent = `${h}:${m}:${s}`;
-        }
-
-        update();
-        const timer = setInterval(update, 1000);
-    }
-
-    async function renderMatchesWithBadges(matches) {
-        const container = document.querySelector('.matches-list');
-        if (!container) return;
-
-        const existing = container.querySelector('.match-day');
-        if (existing) existing.remove();
-
-        const groups = {};
-        matches.forEach(m => {
-            const day = new Date(m.date).toLocaleDateString('pt-BR');
-            if (!groups[day]) groups[day] = [];
-            groups[day].push(m);
-        });
-
-        for (const day of Object.keys(groups)) {
-            const dayDiv = document.createElement('div');
-            dayDiv.className = 'match-day';
-
-            const h = document.createElement('h3');
-            h.className = 'match-day-title';
-            h.textContent = day;
-            dayDiv.appendChild(h);
-
-            const ul = document.createElement('ul');
-            ul.className = 'match-list';
-
-            for (const m of groups[day]) {
-                const li = document.createElement('li');
-                li.className = 'match-item';
-
-                const homeBadge = document.createElement('img');
-                homeBadge.className = 'team-badge';
-                homeBadge.src = 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Football_%28soccer_ball%29.svg';
-;
-
-                const awayBadge = document.createElement('img');
-                awayBadge.className = 'team-badge';
-                awayBadge.src = 'https://upload.wikimedia.org/wikipedia/commons/6/6e/Football_%28soccer_ball%29.svg';
-
-                const countdown = document.createElement('div');
-                countdown.className = 'countdown';
-
-                startCountdown(countdown, m.date);
-
-                li.innerHTML = `
-                <div class="match-left">
-                    ${new Date(m.date).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
-                </div>
-                <div class="match-center">
-                    <span class="team">${m.homeTeam}</span>
-                    <span class="vs">x</span>
-                    <span class="team">${m.awayTeam}</span>
-                </div>
-                <div class="match-right">
-                    <span class="status">${m.status || 'Agendado'}</span>
-                    <a class="link" href="match.html?id=${m.id}">Ver</a>
-                </div>
-            `;
-
-                // inserir badges antes dos nomes
-                const center = li.querySelector('.match-center');
-                center.prepend(homeBadge);
-                center.appendChild(awayBadge);
-
-                li.appendChild(countdown);
-                ul.appendChild(li);
-
-                // carregar badges async
-                getTeamBadge(m.homeTeam).then(b => { if (b) homeBadge.src = b; });
-                getTeamBadge(m.awayTeam).then(b => { if (b) awayBadge.src = b; });
-            }
-
-            dayDiv.appendChild(ul);
-            container.appendChild(dayDiv);
-        }
-    }
-    // BOOT
-    (async () => {
-        try {
-            const matches = await loadMatches();
-
-            if (document.querySelector('.matches-list')) {
-                renderMatchesWithBadges(matches);
-            }
-
-            if (document.getElementById('live-match') || document.getElementById('upcoming')) {
-                renderIndex(matches);
-            }
-
-            if (document.getElementById('events-list')) {
-                const id = getQueryId();
-                if (!id) {
-                    document.getElementById('events-list').innerHTML = '<li>ID da partida não informado na URL.</li>';
-                } else {
-                    const match = matches.find(m => m.id === id);
-                    if (!match) {
-                        document.getElementById('events-list').innerHTML = `<li>Partida com id "${id}" não encontrada.</li>`;
-                    } else {
-                        renderMatchDetail(match);
-                    }
-                }
-            }
-
-            if (document.getElementById('match-select')) {
-                setupAdmin(matches);
-            }
-
-        } catch (err) {
-            console.error(err);
-            const main = document.querySelector('main');
-            if (main) main.innerHTML = `<div style="color:salmon;padding:1rem;border-radius:8px">Erro ao carregar dados: ${err.message}</div>`;
-        }
-    })(); });
+    setInterval(nextSlide, 3000);
+});

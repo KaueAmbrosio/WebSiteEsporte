@@ -1,119 +1,146 @@
 <!doctype html>
 <html lang="pt-BR">
-
-<head>
+  <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width,initial-scale=1" />
-    <title>Placar ao Vivo — Home</title>
+    <title>FC SCORE — Placar ao Vivo</title>
     <link rel="stylesheet" href="assets/css/style.css" />
-</head>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Bebas+Neue&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"
+    />
+  </head>
 
-<body>
+  <body>
     <header class="site-header">
-        <div class="container header-inner">
-            <a class="brand" href="index.html">PlacarAoVivo</a>
-            <nav class="main-nav" aria-label="Menu principal">
-                <a href="index.html">Home</a>
-                <a href="matches.html">Partidas</a>
-                <a href="teams.html">Times</a>
-                <a href="admin.html" class="btn-outline">Admin</a>
-            </nav>
-        </div>
+      <div class="container header-inner">
+        <a class="brand" href="index.html">
+          <img src="assets/img/logo.png" alt="FC SCORE" class="logo" />
+        </a>
+        <nav class="main-nav" aria-label="Menu principal">
+          <a href="index.html">Home</a>
+          <a href="matches.html">Partidas</a>
+          <a href="teams.html">Times</a>
+          <a href="admin.html" class="btn-outline">Admin</a>
+        </nav>
+      </div>
     </header>
 
     <main class="container">
-        <section class="hero">
-            <h1>Placar ao Vivo</h1>
-            <p class="lead">
-                Acompanhe partidas, tabelas e destaques — atualizado em tempo real (ou
-                manualmente).
-            </p>
-        </section>
+      <!-- HERO: substitua a seção atual -->
+      <section class="hero hero--split">
+        <div class="hero-content">
+          <h1>FC SCORE</h1>
+          <p class="lead">
+            Acompanhe partidas, tabelas e destaques — atualizado em tempo real.
+            Veja jogos, escudos, eventos e classificação da Premier League.
+          </p>
 
-        <section class="card-grid">
-            <!-- Live match preview (JS will replace contents) -->
-            <article class="card card-live" id="live-match">
-                <h2 class="card-title">Jogo ao vivo</h2>
-                <div class="match-snapshot">
-                    <div class="team">
-                        <div class="team-name">Time A</div>
-                        <div class="team-score">2</div>
-                    </div>
-                    <div class="match-meta">
-                        <div class="status">2º Tempo • 68'</div>
-                        <a class="btn" href="match.html?id=m2026-001">Ver detalhes</a>
-                    </div>
-                    <div class="team">
-                        <div class="team-name">Time B</div>
-                        <div class="team-score">1</div>
-                    </div>
-                </div>
-            </article>
+          <ul class="hero-features">
+            <li>Placar em tempo real e histórico de partidas</li>
+            <li>Notificações de gols e eventos</li>
+            <li>Tabela de classificação atualizada</li>
+          </ul>
 
-            <!-- Upcoming matches -->
-            <article class="card" id="upcoming">
-                <h2 class="card-title">Próximas partidas</h2>
-                <ul class="match-list">
-                    <li class="match-item">
-                        <div class="match-left">20/02 • 19:00</div>
-                        <div class="match-center">
-                            Time C <span class="vs">x</span> Time D
-                        </div>
-                        <a class="link" href="match.html?id=m2026-002">Ver</a>
-                    </li>
-                    <li class="match-item">
-                        <div class="match-left">21/02 • 16:00</div>
-                        <div class="match-center">
-                            Time E <span class="vs">x</span> Time F
-                        </div>
-                        <a class="link" href="match.html?id=m2026-003">Ver</a>
-                    </li>
-                </ul>
-                <a class="btn-link" href="matches.html">Ver todas as partidas</a>
-            </article>
+          <div class="hero-actions">
+            <a class="btn" href="matches.html">Ver partidas</a>
+            <a class="btn btn-ghost" href="teams.html">Exibir mais</a>
+          </div>
+        </div>
 
-            <!-- Table preview -->
-            <article class="card" id="table-preview">
-                <h2 class="card-title">Tabela da competição</h2>
-                <table class="standings">
-                    <thead>
-                        <tr>
-                            <th>Pos</th>
-                            <th>Time</th>
-                            <th>P</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr>
-                            <td>1</td>
-                            <td>Time A</td>
-                            <td>36</td>
-                        </tr>
-                        <tr>
-                            <td>2</td>
-                            <td>Time C</td>
-                            <td>33</td>
-                        </tr>
-                        <tr>
-                            <td>3</td>
-                            <td>Time B</td>
-                            <td>30</td>
-                        </tr>
-                    </tbody>
-                </table>
-                <a class="btn-link" href="teams.html">Ver times</a>
-            </article>
-        </section>
+        <div class="hero-media">
+          <div class="player-carousel">
+            <img
+              src="assets/img/players/player1.jpg"
+              class="carousel-item visible"
+            />
+            <img src="assets/img/players/player2.jpg" class="carousel-item" />
+            <img src="assets/img/players/player3.jpg" class="carousel-item" />
+          </div>
+        </div>
+      </section>
+
+      <section class="card-grid">
+        <article class="card card-live" id="live-match">
+          <h2 class="card-title">Proxima Partida</h2>
+          <div class="match-snapshot">
+            <div class="team">
+              <div class="team-name">—</div>
+              <div class="team-score">-</div>
+            </div>
+            <div class="match-meta">
+              <div class="status muted">Nenhum jogo ao vivo</div>
+              <a class="btn" href="matches.html">Ver detalhes</a>
+            </div>
+            <div class="team">
+              <div class="team-name">—</div>
+              <div class="team-score">-</div>
+            </div>
+          </div>
+        </article>
+
+        <article class="card" id="upcoming">
+          <h2 class="card-title">Partida em destaque</h2>
+          <ul class="match-list"></ul>
+          <a class="btn-link" href="matches.html">Ver todas as partidas</a>
+        </article>
+
+        <article class="card" id="table-preview">
+          <h2 class="card-title">Tabela da competição</h2>
+          <table class="standings">
+            <thead>
+              <tr>
+                <th>Pos</th>
+                <th>Time</th>
+                <th>P</th>
+                <th>J</th>
+                <th>V</th>
+                <th>E</th>
+                <th>D</th>
+                <th>SG</th>
+              </tr>
+            </thead>
+            <tbody>
+              <!-- JS preenche -->
+            </tbody>
+          </table>
+          <a class="btn-link" href="teams.html#standings"
+            >Exibir tabela completa</a
+          >
+        </article>
+      </section>
     </main>
 
     <footer class="site-footer">
-        <div class="container">
-            <small>© 2026 PlacarAoVivo — projeto de exemplo</small>
+      <div class="container footer-inner">
+        <div class="footer-brand">
+          <div class="logo-container">
+            <img src="assets/img/logo.png" alt="FC SCORE" class="logo" />
+            <span class="logo-text bebas-neue-regular">FC Score</span>
+          </div>
+          <p class="footer-desc">
+            Acompanhe partidas, tabelas e estatísticas da Premier League em
+            tempo real.
+          </p>
         </div>
+
+        <div class="footer-social">
+          <a href="#" aria-label="Instagram"
+            ><i class="fab fa-instagram"></i
+          ></a>
+          <a href="#" aria-label="Twitter"><i class="fab fa-twitter"></i></a>
+          <a href="#" aria-label="YouTube"><i class="fab fa-youtube"></i></a>
+          <a href="#" aria-label="Facebook"><i class="fab fa-facebook"></i></a>
+        </div>
+      </div>
+
+      <div class="footer-bottom">© 2026 PlacarAoVivo — projeto de exemplo</div>
     </footer>
 
-    <!-- script placeholder -->
     <script src="assets/js/app.js" defer></script>
-</body>
-
+  </body>
 </html>
